@@ -1,0 +1,32 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.Bored" parent="Theme.MaterialComponents.Light">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:colorBackground">?colorSurface</item>
+
+        <item name="colorPrimary">@color/color_primary</item>
+<!--        <item name="colorPrimaryDark">@color/color_primary_dark</item>-->
+        <item name="colorPrimaryDark">@color/system_window_scrim_compat</item>
+        <item name="colorPrimaryVariant">?colorPrimary</item>
+
+        <item name="colorSecondary">?colorPrimary</item>
+        <item name="colorOnSecondary">?colorOnPrimary</item>
+        <item name="colorSecondaryVariant">?colorSecondary</item>
+
+        <item name="colorSurface">@color/color_surface</item>
+        <item name="minTouchTargetSize">0dp</item>
+        <item name="textInputStyle">@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox</item>
+
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">?isLightTheme</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">?isLightTheme</item>
+    </style>
+
+    <style name="Theme.Bored.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+</resources>

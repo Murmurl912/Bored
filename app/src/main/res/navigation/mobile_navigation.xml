@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_particle">
+
+    <fragment
+        android:id="@+id/nav_particle"
+        android:name="com.example.bored.ui.particle.ParticleFragment"
+        android:label="@string/menu_particle"
+        tools:layout="@layout/fragment_particle" />
+
+</navigation>

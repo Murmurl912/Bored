@@ -1,0 +1,4 @@
+rootProject.name = "Bored"
+include ':app'
+include 'nbody'
+include ':android-render'
