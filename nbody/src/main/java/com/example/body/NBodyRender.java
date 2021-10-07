@@ -2,12 +2,22 @@ package com.example.body;
 
 import java.util.Collection;
 import java.util.WeakHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public interface NBodyRender extends Runnable {
 
     WeakHashMap<NBodyRender, Thread> renderMap = new WeakHashMap<>();
 
-    Collection<Body> bodies();
+    BlockingQueue<Collection<Body>> buffer();
+
+    default Collection<Body> bodies() throws InterruptedException {
+        BlockingQueue<Collection<Body>> buffer = buffer();
+        if (buffer != null) {
+            return buffer.take();
+        }
+        return null;
+    }
 
     @Override
     default void run() {
@@ -17,18 +27,14 @@ public interface NBodyRender extends Runnable {
     }
 
     default void render() {
-        Collection<Body> bodies = bodies();
-        if (bodies == null) {
-            return;
-        }
-        synchronized (bodies) {
-            render(bodies);
-            try {
-                bodies.wait(1000 / 60);
-            } catch (InterruptedException e) {
-                // stop rendering
-                thread().interrupt();
+        try {
+            Collection<Body> bodies = bodies();
+            if (bodies == null) {
+                return;
             }
+            render(bodies);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -53,6 +59,7 @@ public interface NBodyRender extends Runnable {
             return;
         }
         thread = new Thread(this);
+        thread.setPriority(Thread.MAX_PRIORITY);
         renderMap.put(this, thread);
         thread.start();
     }

@@ -2,18 +2,26 @@ package com.example.body;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class BruteForceNBodySimulator implements NBodySimulator {
 
+    private final BlockingQueue<Collection<Body>> buffer
+            = new ArrayBlockingQueue<>(100000);
     private final Collection<Body> bodies = new ArrayList<>();
-    private double timestep = 1e11;
+    private double timestep = 1e4;
 
     @Override
     public Collection<Body> bodies() {
-        Objects.requireNonNull(bodies);
         return bodies;
+    }
+
+    @Override
+    public BlockingQueue<Collection<Body>> buffer() {
+        return buffer;
     }
 
     @Override
@@ -25,7 +33,7 @@ public class BruteForceNBodySimulator implements NBodySimulator {
                 .parallel()
                 .forEach(body -> {
                     for (Body another : bodies) {
-                        if (body != another) {
+                        if (!body.equals(another)) {
                             body.force(another);
                         }
                     }
@@ -34,57 +42,111 @@ public class BruteForceNBodySimulator implements NBodySimulator {
                 .parallel()
                 .forEach(body -> {
                     body.update(timestep);
-                    System.out.println(body);
                 });
+        System.out.println(bodies);
     }
 
     public void init() {
-        init(100);
+        solar();
+        buffer.offer(bodies);
     }
 
-    public void init(int count) {
-        double radius = 1e18; // universe radius
-        double mass = 1.98892e30;
+    public void solar() {
+        Random random = new Random(System.currentTimeMillis());
 
-        for (int i = 0; i < count; i++) {
-            double px = radius * Math.exp(-1.8) * (0.5 - Math.random());
-            double py = radius * Math.exp(-1.8) * (0.5 - Math.random());
-            double magv = Math.sqrt(
-                    Body.G * 1e6 * mass /
-                            Math.sqrt(px * px + py * py)
-            );
-            double absangle = Math.atan(Math.abs(py / px));
-            double thetav = Math.PI / 2 - absangle;
-            double phiv = Math.random() * Math.PI;
-            double vx = -Math.signum(py) * Math.cos(thetav) * magv;
-            double vy = Math.signum(px) * Math.sin(thetav) * magv;
+        Body sun = new Body();
+        sun.id = "sun";
+        sun.mass = 1.9885e30;
+        sun.radius = 6.957e8;
+        sun.drawRadius = 24;
+        sun.color = random.nextInt();
 
-            if (Math.random() <= 0.5) {
-                vx = -vx;
-                vy = -vy;
-            }
+        Body mercury = new Body();
+        mercury.id = "mercury";
+        mercury.mass = 0.33011e24;
+        mercury.radius = 2440.5e3;
+        mercury.sy = 69.817e9;
+        mercury.vx = 38.86e3;
+        mercury.drawRadius = 12;
+        mercury.color = random.nextInt();
 
-            double m = Math.random() * mass * 10 + 1e20;
-            int color = (int) (Math.random() * Integer.MAX_VALUE);
-            Body body = new Body();
-            body.sx = px;
-            body.sy = py;
-            body.vx = vx;
-            body.vy  = vy;
-            body.color = color;
-            body.mass = m;
-            body.radius = 8;
-            bodies.add(body);
-        }
+        Body venus = new Body();
+        venus.id = "venus";
+        venus.mass = 4.8675e24;
+        venus.radius = 6051.8e3;
+        venus.sy = 108.939e9;
+        venus.vx = 34.79e3;
+        venus.drawRadius = 12;
+        venus.color = random.nextInt();
+
+        Body earth = new Body();
+        earth.id = "earth";
+        earth.mass = 5.9724e24;
+        earth.sy = 152.099e9; // 152.099e6 km
+        earth.vx = 29.29e3; // 29.29km
+        earth.radius = 6.371e6; // 6371km
+        earth.drawRadius = 12;
+        earth.color = random.nextInt();
+
+        Body moon = new Body();
+        moon.id = "moon";
+        moon.mass = 0.07346e24;
+        moon.sy = earth.sy + 0.4055e9; // moon to earth 0.4055e6 km
+        moon.vx = earth.vx + 0.970e3; // min orbital velocity to earth 0.970 km//s
+        moon.radius = 1.7374e6; // radius 1737.4 km
+        moon.drawRadius = 6;
+        moon.color =  random.nextInt();
+
+        Body mars = new Body();
+        mars.id = "mars";
+        mars.mass = 0.64171e24;
+        mars.radius = 3389.5e3;
+        mars.sy = 249.229e9;
+        mars.vx = 21.97e3;
+        mars.color = random.nextInt();
+        mars.drawRadius = 12;
+
+        Body jupiter = new Body();
+        jupiter.id = "jupiter";
+        jupiter.mass = 1898.19e24;
+        jupiter.radius = 71492e3;
+        jupiter.sy = 816.618e9;
+        jupiter.vx = 12.44e3;
+        jupiter.color = random.nextInt();
+        jupiter.drawRadius = 12;
+
+        Body saturn = new Body();
+        saturn.id = "saturn";
+        saturn.mass = 568.34e24;
+        saturn.radius = 58232e3;
+        saturn.sy = 1514.504e9;
+        saturn.vx = 9.09e3;
+        saturn.drawRadius = 12;
+        saturn.color = random.nextInt();
+
+        Body uranus = new Body();
+        uranus.id = "uranus";
+        uranus.mass = 86.813e24;
+        uranus.radius = 25362e3;
+        uranus.sy = 3003.625e9;
+        uranus.vx = 6.49e3;
+        uranus.drawRadius = 12;
+        uranus.color = random.nextInt();
+
+        bodies.add(earth);
+        bodies.add(moon);
+        bodies.add(sun);
+        bodies.add(mercury);
+        bodies.add(venus);
+        bodies.add(mars);
+        bodies.add(jupiter);
+        bodies.add(saturn);
+        bodies.add(uranus);
+    }
+
+    public void asteroid () {
         Body body = new Body();
-        body.vx = 0;
-        body.vy = 0;
-        body.sx = 0;
-        body.sy = 0;
-        body.mass = 1e6 * mass;
-        body.color = 0x00FF0000;
-        body.radius = 16;
-        bodies.add(body);
+        body.mass = (0.000035 + Math.random()) * 939300e15;
+        body.radius = (0.1 + Math.random()) * 900e3;
     }
-
 }

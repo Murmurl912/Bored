@@ -44,12 +44,13 @@ public class ParticleFragment extends Fragment {
             binding.play.setEnabled(false);
             binding.pause.setEnabled(true);
             simulation = new NBodySimulation();
-            simulation.start(binding.surfaceView.getHolder());
+            simulation.start(binding.surfaceView, binding.surfaceView.getHolder());
         });
         binding.pause.setOnClickListener(v -> {
             binding.play.setEnabled(true);
             binding.pause.setEnabled(false);
             simulation.stop();
         });
+        binding.pause.setEnabled(false);
     }
 }

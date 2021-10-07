@@ -4,20 +4,28 @@ import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import com.example.body.Body;
 import com.example.body.NBodyRender;
 import com.example.body.NBodySimulator;
 
+import java.nio.Buffer;
+import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.concurrent.BlockingQueue;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class AndroidNBodyRender implements NBodyRender {
 
     public static final String TAG = AndroidNBodyRender.class.getSimpleName();
 
-    private Collection<Body> bodies;
+    private BlockingQueue<Collection<Body>> buffer;
+    private HashMap<Body, Path> paths;
 
     private SurfaceHolder holder;
     private Paint paint;
@@ -31,20 +39,29 @@ public class AndroidNBodyRender implements NBodyRender {
     private double tx;
     private double ty;
 
+    private double fps;
+    private long count;
     private long time;
+
     public AndroidNBodyRender(NBodySimulator simulator, SurfaceHolder holder) {
-        init(holder, simulator.bodies());
+        init(holder, simulator.buffer());
+        paths = new HashMap<>();
     }
 
     @Override
-    public Collection<Body> bodies() {
-        Objects.requireNonNull(bodies);
-        return bodies;
+    public BlockingQueue<Collection<Body>> buffer() {
+        return buffer;
     }
 
     @Override
     public void render() {
-        time = System.currentTimeMillis();
+        if (System.currentTimeMillis() - time >= 1000) {
+            fps = 1000.0d * count / (System.currentTimeMillis() - time) ;
+            time = System.currentTimeMillis();
+            count = 0;
+        } else {
+            count++;
+        }
         NBodyRender.super.render();
     }
 
@@ -69,30 +86,55 @@ public class AndroidNBodyRender implements NBodyRender {
         } catch (Exception e) {
             Log.d(TAG, "failed to render frame: " + bodies, e);
         } finally {
-            long duration = System.currentTimeMillis() - time;
             paint.setTextSize(40);
             paint.setColor(Color.BLACK);
-            canvas.drawText(String.format("%3.2f FPS",
-                            (1000f / duration)),
+            canvas.drawText(String.format("%3.2f FPS", fps),
                     20, 60, paint);
+            BlockingQueue<Collection<Body>> buffer = buffer();
+            int size = buffer.size();
+            canvas.drawText(String.format("buffer size: %d", size), 20, (float) (height - 60), paint);
             holder.unlockCanvasAndPost(canvas);
         }
     }
 
     protected void draw(Canvas canvas, Collection<Body> bodies) {
         canvas.drawColor(backgroundColor);
-        bodies.stream()
-                .forEach(body -> {
-                    draw(canvas, body);
-                });
+        bodies.forEach(body -> draw(canvas, body));
     }
 
     protected void draw(Canvas canvas, Body body) {
+        float x = Math.round(body.sx * scale);
+        float y = Math.round(body.sy * scale);
+        float r = Math.round(body.drawRadius);
+        paint.setStrokeWidth(4);
+
+        // draw body
         paint.setColor(body.color);
-        canvas.drawCircle(Math.round(body.sx * scale),
-                Math.round(body.sy * scale),
-                Math.round(body.radius * scale),
-                paint);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(x, y, r, paint);
+        canvas.drawText(body.id, x + r + 20, y + 10, paint);
+
+        // draw path
+        Path path = paths.computeIfPresent(body, (b, p) -> {
+            p.lineTo(x, y);
+            return p;
+        });
+        paths.compute(body, new BiFunction<Body, Path, Path>() {
+            @Override
+            public Path apply(Body body, Path path) {
+                if (path == null) {
+                    path = new Path();
+                    path.moveTo(x, y);
+                    path.close();
+                    return path;
+                }
+                path.lineTo(x, y);
+                return path;
+            }
+        });
+        paint.setStrokeWidth(3);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawPath(path, paint);
     }
 
     public void scale(double scale) {
@@ -140,9 +182,9 @@ public class AndroidNBodyRender implements NBodyRender {
         return backgroundColor;
     }
 
-    public void init(SurfaceHolder holder, Collection<Body> bodies) {
+    public void init(SurfaceHolder holder, BlockingQueue<Collection<Body>> buffer) {
         this.holder = holder;
-        this.bodies = bodies;
+        this.buffer = buffer;
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setStyle(Paint.Style.FILL);
     }

@@ -2,6 +2,9 @@ package com.example.body;
 
 import java.util.Collection;
 import java.util.WeakHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public interface NBodySimulator extends Runnable {
 
@@ -9,14 +12,26 @@ public interface NBodySimulator extends Runnable {
 
     Collection<Body> bodies();
 
+    BlockingQueue<Collection<Body>> buffer();
+
     @Override
     default void run() {
         while (!Thread.currentThread().isInterrupted()) {
             Collection<Body> bodies = bodies();
-            synchronized (bodies) {
-                update(bodies);
-                bodies.notifyAll();
-            }
+            BlockingQueue<Collection<Body>> buffer = buffer();
+            update(bodies);
+            Collection<Body> clone = bodies.parallelStream()
+                    .map(Body::clone)
+                    .collect(Collectors.toList());
+            boolean success;
+            do {
+                try {
+                    success = buffer.offer(clone, 1000 / 6, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            } while (!success);
         }
     }
 
