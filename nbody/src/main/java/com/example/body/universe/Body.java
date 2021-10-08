@@ -1,4 +1,4 @@
-package com.example.body;
+package com.example.body.universe;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -17,7 +17,6 @@ public class Body implements Cloneable {
 
     public double mass; // mass of the body
     public double radius; // radius of the body
-    public double drawRadius; // radius use for drawing
     public int color; // color of the body
 
     public double vx; // absolute velocity x
@@ -52,6 +51,19 @@ public class Body implements Cloneable {
         this.fy = fy;
     }
 
+    public Body(Body body) {
+        this.id = body.id;
+        this.sx = body.sx;
+        this.sy = body.sy;
+        this.mass = body.mass;
+        this.radius = body.radius;
+        this.color = body.color;
+        this.vx = body.vx;
+        this.vy = body.vy;
+        this.fx = body.fx;
+        this.fy = body.fy;
+    }
+
     /**
      * update current velocity and position using a timestep dt
      * @param dt timestep
@@ -76,6 +88,9 @@ public class Body implements Cloneable {
     }
 
     public void force(Body body) {
+        if (equals(body)) {
+            return;
+        }
         double dx = body.sx - sx;
         double dy = body.sy - sy;
 
@@ -104,19 +119,7 @@ public class Body implements Cloneable {
             return (Body) super.clone();
         } catch (CloneNotSupportedException e) {
             // failed to clone
-            Body body = new Body();
-            body.id = id;
-            body.radius = radius;
-            body.mass = mass;
-            body.sx = sx;
-            body.sy = sy;
-            body.vx = vx;
-            body.vy = vy;
-            body.color = color;
-            body.fx = fx;
-            body.fy = fy;
-
-            return body;
+            return new Body(this);
         }
     }
 

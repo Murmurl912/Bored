@@ -7,23 +7,20 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.Log;
 import android.view.SurfaceHolder;
-import com.example.body.Body;
-import com.example.body.NBodyRender;
-import com.example.body.NBodySimulator;
+import com.example.body.render.ThreadedNBodyRender;
+import com.example.body.simluator.NBodySimulator;
+import com.example.body.universe.Body;
 
-import java.nio.Buffer;
-import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
-public class AndroidNBodyRender implements NBodyRender {
+public class AndroidNBodyRender implements ThreadedNBodyRender {
 
     public static final String TAG = AndroidNBodyRender.class.getSimpleName();
 
+    private Thread thread;
     private BlockingQueue<Collection<Body>> buffer;
     private HashMap<Body, Path> paths;
 
@@ -54,6 +51,19 @@ public class AndroidNBodyRender implements NBodyRender {
     }
 
     @Override
+    synchronized public Thread thread(Runnable task) {
+        if (thread == null || !thread.isAlive()
+                || thread.isInterrupted()) {
+            thread = new Thread(task);
+        }
+        return thread;
+    }
+
+    synchronized public Thread thread() {
+        return thread;
+    }
+
+    @Override
     public void render() {
         if (System.currentTimeMillis() - time >= 1000) {
             fps = 1000.0d * count / (System.currentTimeMillis() - time) ;
@@ -62,7 +72,11 @@ public class AndroidNBodyRender implements NBodyRender {
         } else {
             count++;
         }
-        NBodyRender.super.render();
+        try {
+            ThreadedNBodyRender.super.render();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @SuppressLint("DefaultLocale")
@@ -105,7 +119,7 @@ public class AndroidNBodyRender implements NBodyRender {
     protected void draw(Canvas canvas, Body body) {
         float x = Math.round(body.sx * scale);
         float y = Math.round(body.sy * scale);
-        float r = Math.round(body.drawRadius);
+        float r = Math.round(12);
         paint.setStrokeWidth(4);
 
         // draw body

@@ -1,5 +1,7 @@
 package com.example.body;
 
+import com.example.body.universe.Body;
+
 import java.util.Collection;
 import java.util.WeakHashMap;
 import java.util.concurrent.BlockingQueue;

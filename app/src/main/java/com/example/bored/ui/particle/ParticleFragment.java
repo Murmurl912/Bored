@@ -1,17 +1,12 @@
 package com.example.bored.ui.particle;
 
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.Bundle;
-
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
-import com.example.body.Body;
-import com.example.body.NBodySimulator;
 import com.example.bored.databinding.FragmentParticleBinding;
 
 
